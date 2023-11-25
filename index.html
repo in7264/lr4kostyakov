@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      max-width: 600px;
+      margin: 20px auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1, h2 {
+      text-align: center;
+      color: #333;
+    }
+
+    div {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    input {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      box-sizing: border-box;
+    }
+
+    button {
+      padding: 10px;
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    p {
+      margin: 0;
+    }
+
+    span {
+      font-weight: bold;
+    }
+
+    #verificationResult {
+      font-weight: bold;
+    }
+  </style>
+  <script>
+
+document.addEventListener("DOMContentLoaded", function () {
+    var publicKeyElement = document.getElementById("publicKey");
+    var privateKeyElement = document.getElementById("privateKey");
+    var signatureValueElement = document.getElementById("signatureValue");
+    var verificationResultElement = document.getElementById("verificationResult");
+
+    document.getElementById("generateKey").addEventListener("click", function () {
+      var p = parseInt(getInputValue("p"));
+      var q = parseInt(getInputValue("q"));
+      var e = parseInt(getInputValue("e"));
+
+      var keys = generateKeys(p, q, e);
+
+      publicKeyElement.textContent = `(${keys.n}, ${keys.e})`;
+      privateKeyElement.textContent = `(${keys.n}, ${keys.d})`;
+    });
+
+    document.getElementById("sign").addEventListener("click", function () {
+      var message = getInputValue("messageToSign");
+      var privateKey = parseKey(privateKeyElement.textContent);
+
+      var signature = sign(message, privateKey);
+
+      signatureValueElement.textContent = signature;
+    });
+
+    document.getElementById("verify").addEventListener("click", function () {
+      var message = getInputValue("messageToVerify");
+      var receivedSignature = getInputValue("receivedSignature");
+      var publicKey = parseKey(publicKeyElement.textContent);
+
+      var isVerified = verify(message, receivedSignature, publicKey);
+
+      verificationResultElement.textContent = isVerified ? "Valid" : "Invalid";
+    });
+
+    function getInputValue(id) {
+      return document.getElementById(id).value;
+    }
+
+    function parseKey(keyString) {
+      var keyValues = keyString.match(/\d+/g);
+      return {
+        n: parseInt(keyValues[0]),
+        d: parseInt(keyValues[1])
+      };
+    }
+
+    function generateKeys(p, q, e) {
+      var n = p * q;
+      var phi = (p - 1) * (q - 1);
+      var d = modInverse(e, phi);
+
+      return {
+        n: n,
+        e: e,
+        d: d
+      };
+    }
+
+    function modInverse(a, m) {
+      for (var x = 1; x < m; x++) {
+        if ((a * x) % m === 1) {
+          return x;
+        }
+      }
+      return null;
+    }
+
+    function sign(message, privateKey) {
+      var hash = hashFunction(message);
+      return numberCalculation(hash, privateKey.n, privateKey.d);
+    }
+
+    function verify(message, signature, publicKey) {
+      var hash = hashFunction(message);
+      var decryptedSignature = numberCalculation(signature, publicKey.n, publicKey.d);
+      return hash === decryptedSignature;
+    }
+
+    function numberCalculation(m, n, exp) {
+      var result = 1;
+      for (var i = 0; i < exp; i++) {
+        result = (result * m) % n;
+      }
+      return result;
+    }
+
+    function hashFunction(message) {
+      var hash = 0;
+      for (var i = 0; i < message.length; i++) {
+        hash += message.charCodeAt(i);
+      }
+      return hash;
+    }
+  });
+  </script>
+  <title>RSA Digital Signature</title>
+</head>
+
+<body>
+  <h1>RSA Digital Signature</h1>
+
+  <div>
+    <label for="p">Enter prime number p:</label>
+    <input type="text" id="p" placeholder="e.g., 61" />
+  </div>
+
+  <div>
+    <label for="q">Enter prime number q:</label>
+    <input type="text" id="q" placeholder="e.g., 53" />
+  </div>
+
+  <div>
+    <label for="e">Enter public exponent e:</label>
+    <input type="text" id="e" placeholder="e.g., 17" />
+  </div>
+
+  <button id="generateKey">Generate Keys</button>
+
+  <div id="keys">
+    <h2>Generated Keys</h2>
+    <p>Public Key (n, e): <span id="publicKey"></span></p>
+    <p>Private Key (n, d): <span id="privateKey"></span></p>
+  </div>
+
+  <div id="signature">
+    <h2>Sign Message</h2>
+    <label for="messageToSign">Enter message to sign:</label>
+    <input type="text" id="messageToSign" placeholder="e.g., Hello" />
+    <button id="sign">Sign</button>
+    <p>Signature: <span id="signatureValue"></span></p>
+  </div>
+
+  <div id="verification">
+    <h2>Verify Signature</h2>
+    <label for="messageToVerify">Enter message to verify:</label>
+    <input type="text" id="messageToVerify" placeholder="e.g., Hello" />
+    <label for="receivedSignature">Enter received signature:</label>
+    <input type="text" id="receivedSignature" placeholder="Enter signature" />
+    <button id="verify">Verify</button>
+    <p>Verification Result: <span id="verificationResult"></span></p>
+  </div>
+</body>
+
+</html>
